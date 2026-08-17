@@ -2,7 +2,7 @@ import base64
 import io
 import uuid
 from pathlib import Path
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 from PIL import Image, ImageOps
 
 from app.core.config import settings
@@ -63,7 +63,7 @@ class DocumentIngestionService:
     def _pdf_bytes_to_pil(self, pdf_bytes: bytes) -> list[Image.Image]:
         """Task: Render PDF pages into a list of PIL Images."""
         pil_images: list[Image.Image] = []
-        pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
 
         for page_num in range(len(pdf_doc)):
             page = pdf_doc.load_page(page_num)
