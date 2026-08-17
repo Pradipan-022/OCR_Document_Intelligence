@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.database import Base, engine
 
 # CRITICAL: Import models so SQLAlchemy registers them with Base before table creation
-import app.models.document  # noqa: F401
+import app.models.document_model  # noqa: F401
 
 
 # Lifespan event handler for startup/shutdown tasks

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, status, UploadFile
 
-from app.schemas.document import DocumentUploadResponse
+from app.schemas.document_schema import DocumentUploadResponse
 from app.services.ingestion import DocumentIngestionService
 
 router = APIRouter()

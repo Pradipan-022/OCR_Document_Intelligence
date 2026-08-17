@@ -6,7 +6,7 @@ import pymupdf  # PyMuPDF
 from PIL import Image, ImageOps
 
 from app.core.config import settings
-from app.schemas.document import DocumentUploadResponse, PageMetadata
+from app.schemas.document_schema import DocumentUploadResponse, PageMetadata
 
 
 class DocumentIngestionService:
