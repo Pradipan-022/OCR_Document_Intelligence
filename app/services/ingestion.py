@@ -147,3 +147,5 @@ class DocumentIngestionService:
         )
 
         return response, pil_images
+
+ingestion_service = DocumentIngestionService()
