@@ -1,0 +1,46 @@
+# Byte-compiled / Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments (uv / standard venv)
+.venv/
+venv/
+env/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+ocr_platform.db
+
+# Uploaded Files & Storage (Ignores uploaded files, retains directory)
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# Testing & Tool Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE & OS Files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Temporary test scripts
+temp_db_create.py
