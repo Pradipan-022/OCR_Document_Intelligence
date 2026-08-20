@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from typing import Optional
+
 from app.models.document_model import Document, DocumentPage, StatusEnum
 from app.schemas.document_schema import DocumentUploadResponse
 
@@ -12,6 +14,8 @@ class DocumentService:
         upload_schema: DocumentUploadResponse,
         raw_file_path: str,
         page_image_paths: list[str],
+        owner_id: Optional[str] = None,
+
     ) -> Document:
         """Creates parent Document and child DocumentPage records in SQLite."""
         db_doc = Document(
@@ -21,6 +25,7 @@ class DocumentService:
             file_type=upload_schema.file_type,
             status=StatusEnum.PENDING,
             page_count=upload_schema.page_count,
+            owner_id = owner_id,
         )
         db.add(db_doc)
 

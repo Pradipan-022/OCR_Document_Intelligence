@@ -1,5 +1,6 @@
 from pathlib import Path
 from PIL import Image
+from typing import Optional
 from app.core.config import settings
 
 
@@ -9,9 +10,14 @@ class StorageService:
     def __init__(self, upload_dir: Path = settings.UPLOAD_DIR):
         self.upload_dir = upload_dir
 
-    def get_document_dir(self, document_id: str) -> Path:
-        """Creates and returns a dedicated folder for a document."""
-        doc_dir = self.upload_dir / document_id
+    def get_document_dir(self, document_id: str, user_id: Optional[str] = None) -> Path:
+        """
+        Creates and returns a dedicated folder for a document under user-specific path:
+        - With user_id: uploads/{user_id}/{document_id}
+        - Without user_id: uploads/guest/{document_id}
+        """
+        user_folder = user_id if user_id else "guest"
+        doc_dir = self.upload_dir / user_folder / document_id
         doc_dir.mkdir(parents=True, exist_ok=True)
         return doc_dir
 
@@ -39,9 +45,10 @@ class StorageService:
         filename: str,
         file_bytes: bytes,
         pil_images: list[Image.Image],
+        user_id: Optional[str] = None,
     ) -> tuple[str, list[str]]:
         """Orchestrates saving the raw file and page images to disk."""
-        doc_dir = self.get_document_dir(document_id)
+        doc_dir = self.get_document_dir(document_id=document_id, user_id=user_id)
         raw_path = self._save_raw_file(doc_dir, filename, file_bytes)
         page_paths = self._save_page_images(doc_dir, pil_images)
         return raw_path, page_paths

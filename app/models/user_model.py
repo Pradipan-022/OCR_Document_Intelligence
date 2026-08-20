@@ -1,10 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import List, TYPE_CHECKING
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
+if TYPE_CHECKING:
+    from app.models.document_model import Document
+    
 class User(Base):
     """Represents a registered user in the database"""
     
@@ -36,4 +40,8 @@ class User(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
+    )
+    
+    documents: Mapped[List["Document"]] = relationship(
+        "Document", back_populates="owner", cascade="all, delete-orphan"
     )

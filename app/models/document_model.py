@@ -1,11 +1,13 @@
 import enum
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.core.database import Base
+if TYPE_CHECKING:
+    from app.models.user_model import User
 
 class StatusEnum(str, enum.Enum):
     PENDING = "PENDING"
@@ -22,6 +24,16 @@ class Document(Base):
         String,
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
+    )
+    
+    owner_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True
+    )
+    
+    owner: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="documents"
     )
 
     filename: Mapped[str] = mapped_column(

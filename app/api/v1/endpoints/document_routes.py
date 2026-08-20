@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.core.database import get_db
 from app.schemas.document_schema import DocumentUploadResponse
@@ -17,7 +18,9 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
-    file: UploadFile = File(...), db: Session = Depends(get_db)
+    file: UploadFile = File(...),
+    user_id: Optional[str] = Query(None, description="Optional owner user ID"),
+    db: Session = Depends(get_db),
 ):
     # 1. Byte validation & image extraction
     file_bytes = await file.read()
@@ -25,20 +28,22 @@ async def upload_document(
         file_bytes, file.filename
     )
 
-    # 2. Disk file writing
+    # 2. Disk file writing (saved in user-specific folder structure)
     raw_path, page_paths = storage_service.save_document_files(
         document_id=upload_schema.document_id,
         filename=file.filename,
         file_bytes=file_bytes,
         pil_images=pil_images,
+        user_id=user_id,
     )
 
-    # 3. Database persistence
+    # 3. Database persistence (linked via owner_id/user_id)
     document_service.create_document_with_pages(
         db=db,
         upload_schema=upload_schema,
         raw_file_path=raw_path,
         page_image_paths=page_paths,
+        owner_id=user_id,
     )
 
     return upload_schema
@@ -46,9 +51,15 @@ async def upload_document(
 
 @router.get("/")
 def list_documents(
-    skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+    user_id: Optional[str] = Query(None, description="Filter document history by User ID"),
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
 ):
-    return document_service.list_documents(db=db, skip=skip, limit=limit)
+    """Retrieves document history, optionally filtered by user ID."""
+    return document_service.list_documents(
+        db=db, user_id=user_id, skip=skip, limit=limit
+    )
 
 
 @router.get("/{document_id}")
