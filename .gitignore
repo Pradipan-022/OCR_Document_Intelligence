@@ -44,3 +44,4 @@ Thumbs.db
 
 # Temporary test scripts
 temp_db_create.py
+app/core/security_temp.py
