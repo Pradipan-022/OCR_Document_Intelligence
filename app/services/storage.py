@@ -52,6 +52,20 @@ class StorageService:
         raw_path = self._save_raw_file(doc_dir, filename, file_bytes)
         page_paths = self._save_page_images(doc_dir, pil_images)
         return raw_path, page_paths
+    
+    def save_processed_page_image(
+        self,
+        document_id: str,
+        page_number: int,
+        image: Image.Image,
+        profile_name: str,
+        user_id: Optional[str] = None,
+    ) -> str:
+        """Saves a transformed page image to disk under the document directory."""
+        doc_dir = self.get_document_dir(document_id=document_id, user_id=user_id)
+        processed_path = doc_dir / f"processed_page_{page_number}_{profile_name}.png"
+        image.save(processed_path, format="PNG")
+        return str(processed_path)
 
 
 storage_service = StorageService()

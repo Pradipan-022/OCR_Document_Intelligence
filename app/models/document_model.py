@@ -2,7 +2,7 @@ import enum
 import uuid
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, JSON, String
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Boolean
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.core.database import Base
@@ -143,11 +143,101 @@ class DocumentPage(Base):
         nullable=True,
     )
 
-    # Relationship back to the document
+    # Relationship back to the parent document
     document: Mapped["Document"] = relationship(
         "Document",
         back_populates="pages",
     )
     
-    #Relationship back to parent document
-    document = relationship("Document", back_populates="pages")
+    #One-to-one relationship with quality report
+    quality: Mapped[Optional["DocumentPageQuality"]] = relationship(
+        "DocumentPageQuality",
+        back_populates="page",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+class DocumentPageQuality(Base):
+    """Stores physical quality assessment metrics and preprocessing choices for a page."""
+
+    __tablename__ = "document_page_quality"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
+
+    # Unique foreign key enforces a true one-to-one relationship
+    page_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("document_pages.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+
+    # Visual and physical scores
+    blur_score: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    brightness_score: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    contrast_score: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    skew_angle: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+    )
+
+    estimated_dpi: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    # Quality flags
+    has_document_boundary: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    resolution_warning: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    # Classification and pipeline routing
+    quality_label: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )
+
+    recommended_profile: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    applied_profile: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+    
+    processed_image_path: Mapped[Optional[str]] = mapped_column(
+        String(500), 
+        nullable=True,
+    )
+
+    # Relationship back to DocumentPage
+    page: Mapped["DocumentPage"] = relationship(
+        "DocumentPage",
+        back_populates="quality",
+    )
