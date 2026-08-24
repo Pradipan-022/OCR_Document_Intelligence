@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from app.schemas.quality_schema import DocumentQualityReportSchema
+from app.schemas.quality_schema import DocumentPageQualitySchema
 
 class DocumentQualityAssessor:
     """Evaluates physical and visual properties of document images.
@@ -131,7 +131,7 @@ class DocumentQualityAssessor:
         return "basic"
     
     #Orchestration Method
-    def analyze(self, pil_image: Image.Image) -> DocumentQualityReportSchema:
+    def analyze(self, pil_image: Image.Image) -> DocumentPageQualitySchema:
         """Task: Coordinate individual quality checks step-by-step and return structured schema."""
         gray = self._to_grayscale_array(pil_image)
         width, height = pil_image.size
@@ -162,7 +162,7 @@ class DocumentQualityAssessor:
             quality_label=label,
         )
         
-        return DocumentQualityReportSchema(
+        return DocumentPageQualitySchema(
             width=width,
             height=height,
             estimated_dpi=dpi,
