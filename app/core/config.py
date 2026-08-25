@@ -17,8 +17,11 @@ class Settings(BaseSettings):
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     UPLOAD_DIR: Path = BASE_DIR / "storage" / "uploads"
 
+    LOW_CONFIDENCE_THRESHOLD: int = 50.0
+    
     class Config:
         env_file = ".env"
+    
 
 
 settings = Settings()
