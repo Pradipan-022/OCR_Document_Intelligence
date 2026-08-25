@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from app.schemas.quality_schema import DocumentPageQualitySchema
+from app.schemas.quality_schema import QualityAssessmentSchema
 
 class DocumentQualityAssessor:
     """Evaluates physical and visual properties of document images.
@@ -11,6 +11,8 @@ class DocumentQualityAssessor:
     
     MIN_RECOMMENDED_DPI: int = 150
     MIN_RECOMMENDED_DIM: int = 800
+    CRITICAL_MIN_DPI: int = 100
+    CRITICAL_MIN_DIM: int = 400
     
     # Helper Funcs
     
@@ -50,13 +52,18 @@ class DocumentQualityAssessor:
         
         if pts is None or len(pts) == 0:
             return 0.0
-        
-        angle = cv2.minAreaRect(pts)[-1]
-        if angle < -45:
-            return float(-(90 - angle))
-        elif angle > 45:
-            return float(90 - angle)
-        return float(-angle)
+
+        rect = cv2.minAreaRect(pts)
+        angle = rect[-1]
+
+        # Normalize OpenCV minAreaRect angle to [-45, 45] range across 90/180 degree wraps
+        angle = angle % 90
+        if angle > 45:
+            angle -= 90
+        elif angle < -45:
+            angle += 90
+
+        return float(angle)
     
     def _detect_document_boundary(self, gray: np.ndarray) -> bool:
         """Task: Check for a closed 4-sided contour occupying >30% of total image area."""
@@ -85,19 +92,19 @@ class DocumentQualityAssessor:
         skew_angle: float,
         has_boundary: bool,
         resolution_warning: bool,
+        resolution_critical: bool,
     ) -> str:
-        """Task: Evaluate individual metrics to categorize overall document quality."""
-        if blur_score < 50.0 or (resolution_warning and not has_boundary):
+        """Assigns overall document status: 'Good', 'Acceptable', 'Poor', or 'Needs manual review'."""
+        # Unreadable blur or low-res + blurry images force manual review
+        if blur_score < 50.0 or resolution_critical:
             return "Needs manual review"
 
-        if (
-            abs(skew_angle) > 10.0
-            or contrast < 40.0
-            or brightness < 60.0
-            or brightness > 220.0
-        ):
+        is_low_contrast_issue = contrast < 40.0 and brightness < 200.0
+
+        if abs(skew_angle) > 10.0 or is_low_contrast_issue or brightness < 60.0:
             return "Poor"
 
+        # Minor flaws manageable by preprocessing
         if (
             blur_score < 200.0
             or abs(skew_angle) > 2.0
@@ -122,8 +129,10 @@ class DocumentQualityAssessor:
             return "original"
         if blur_score < 100.0 or estimated_dpi < 150:
             return "small_text"
-        if brightness < 80.0 or brightness > 210.0 or contrast < 40.0:
+        if brightness < 80.0 or (contrast < 40.0 and brightness < 180.0):           
             return "low_light"
+        if brightness > 210.0:
+            return "overexposed"
         if abs(skew_angle) > 3.0:
             return "skewed"
         if contrast < 55.0:
@@ -131,7 +140,7 @@ class DocumentQualityAssessor:
         return "basic"
     
     #Orchestration Method
-    def analyze(self, pil_image: Image.Image) -> DocumentPageQualitySchema:
+    def analyze(self, pil_image: Image.Image) -> QualityAssessmentSchema:
         """Task: Coordinate individual quality checks step-by-step and return structured schema."""
         gray = self._to_grayscale_array(pil_image)
         width, height = pil_image.size
@@ -142,16 +151,29 @@ class DocumentQualityAssessor:
         contrast = self._compute_contrast(gray)
         skew = self._detect_skew_angle(gray)
         has_boundary = self._detect_document_boundary(gray)
-        res_warning = self._check_resolution_suitability(dpi, width, height)
-        
+        # High focus score means text edges are crisp despite small pixel dimensions
+        is_sharp_image = blur >= 300.0
+
+        # Standard warning for sub-optimal images (ignored if image is exceptionally sharp)
+        resolution_warning = (
+            (dpi < self.MIN_RECOMMENDED_DPI or min(width, height) < self.MIN_RECOMMENDED_DIM)
+            and not is_sharp_image
+        )
+
+        # Critical threshold: Only mark unreadable if resolution is low AND sharpness is poor
+        resolution_critical = (
+            (dpi < self.CRITICAL_MIN_DPI or min(width, height) < self.CRITICAL_MIN_DIM)
+            and blur < 150.0
+        )       
+         
         label = self._determine_quality_label(
             blur_score=blur,
             brightness=brightness,
             contrast=contrast,
             skew_angle=skew,
             has_boundary=has_boundary,
-            resolution_warning=res_warning,
-        )
+            resolution_warning=resolution_warning,
+            resolution_critical=resolution_critical,        )
         
         profile = self._recommend_preprocessing_profile(
             blur_score=blur,
@@ -162,7 +184,7 @@ class DocumentQualityAssessor:
             quality_label=label,
         )
         
-        return DocumentPageQualitySchema(
+        return QualityAssessmentSchema(
             width=width,
             height=height,
             estimated_dpi=dpi,
@@ -171,7 +193,8 @@ class DocumentQualityAssessor:
             contrast_score=round(contrast, 2),
             skew_angle=round(skew, 2),
             has_document_boundary=has_boundary,
-            resolution_warning=res_warning,
+            resolution_warning=resolution_warning,
+            resolution_critical=resolution_critical,
             quality_label=label,
             recommended_profile=profile,
         )

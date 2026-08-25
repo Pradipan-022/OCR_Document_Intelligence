@@ -214,6 +214,12 @@ class DocumentPageQuality(Base):
         default=False,
         nullable=False,
     )
+    
+    resolution_critical: Mapped[bool] = mapped_column(
+            Boolean,
+            default=False,
+            nullable=False,
+        )
 
     # Classification and pipeline routing
     quality_label: Mapped[str] = mapped_column(

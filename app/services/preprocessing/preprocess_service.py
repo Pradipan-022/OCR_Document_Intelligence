@@ -114,6 +114,7 @@ class PreprocessingService:
         quality_record.estimated_dpi = payload.get("estimated_dpi", 72)
         quality_record.has_document_boundary = payload.get("has_document_boundary", False)
         quality_record.resolution_warning = payload.get("resolution_warning", False)
+        quality_record.resolution_critical = payload.get("resolution_critical", False)
         quality_record.quality_label = payload.get("quality_label", "Unknown")
         quality_record.recommended_profile = payload.get("recommended_profile", "basic")
         quality_record.applied_profile = payload.get("applied_profile")

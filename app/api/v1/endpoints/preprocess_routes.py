@@ -9,7 +9,7 @@ from app.schemas.quality_schema import (
     DocumentPageQualitySchema,
     PreprocessPageRequest,
 )
-from app.services.document_service import document_service
+from app.services.validation.document_service import document_service
 from app.services.preprocessing.preprocess_service import preprocessing_service
 
 router = APIRouter()

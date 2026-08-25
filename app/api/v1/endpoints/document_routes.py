@@ -5,8 +5,8 @@ from typing import Optional
 
 from app.core.database import get_db
 from app.schemas.document_schema import DocumentUploadResponse
-from app.services.document_service import document_service
-from app.services.ingestion import ingestion_service
+from app.services.validation.document_service import document_service
+from app.services.validation.ingestion import ingestion_service
 from app.services.storage import storage_service
 
 router = APIRouter()

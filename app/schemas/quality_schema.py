@@ -1,6 +1,22 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
+class QualityAssessmentSchema(BaseModel):
+    """Internal image-assessment result before persistence identifiers exist."""
+ 
+    width: int
+    height: int
+    blur_score: float
+    brightness_score: float
+    contrast_score: float
+    skew_angle: float
+    estimated_dpi: int
+    has_document_boundary: bool
+    resolution_warning: bool
+    resolution_critical: bool
+    quality_label: str
+    recommended_profile: str
+
 
 class DocumentPageQualitySchema(BaseModel):
     """Pydantic schema representing document quality metrics and pipeline recommendations."""
@@ -14,6 +30,7 @@ class DocumentPageQualitySchema(BaseModel):
     estimated_dpi: int = Field(..., description="Calculated or EXIF metadata DPI.")
     has_document_boundary: bool = Field(..., description="True if a 4-corner document contour is found.")
     resolution_warning: bool = Field(..., description="True if resolution is below optimal threshold.")
+    resolution_critical: bool = Field(..., description="True if resolution is critically below standard.")
     quality_label: str = Field(..., description="Overall quality classification of the document page.")
     recommended_profile: str = Field(..., description="Suggested preprocessing profile.")
     applied_profile: Optional[str] = Field(
@@ -32,7 +49,7 @@ class PreprocessPageRequest(BaseModel):
 
     override_profile: Optional[str] = Field(
         None,
-        description="Optional profile override: 'original', 'basic', 'low_light', 'skewed', 'noisy_scan', 'small_text'",
+        description="Optional profile override: 'original', 'basic', 'low_light', 'overexposed', 'skewed', 'noisy_scan', 'small_text'",
     )
 
 

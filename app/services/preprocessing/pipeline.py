@@ -30,7 +30,7 @@ class ImagePreprocessingPipeline:
         """Task: Standard conversion to grayscale and bilateral denoising."""
         gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
         # Bilateral filter reduces noise while preserving strong text edges
-        return cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+        return cv2.bilateralFilter(gray, d=9, sigmaColor=30, sigmaSpace=30)
 
     def _profile_low_light(self, cv_image: np.ndarray) -> np.ndarray:
         """Task: Enhance underexposed text using CLAHE and adaptive thresholding."""
@@ -46,6 +46,27 @@ class ImagePreprocessingPipeline:
             cv2.THRESH_BINARY,
             11,
             2,
+        )
+    
+    def _profile_overexposed(self, cv_image: np.ndarray) -> np.ndarray:
+        """Task: Recover text from bright/glare images via gamma compression and adaptive thresholding."""
+        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        
+        # Gamma correction (gamma=2.0) darkens overexposed regions to recover text contrast
+        gamma = 2.0
+        lookup_table = np.array(
+            [((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]
+        ).astype("uint8")
+        darkened = cv2.LUT(gray, lookup_table)
+
+        # Apply wider window adaptive thresholding for washed out backgrounds
+        return cv2.adaptiveThreshold(
+            darkened,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            15,
+            4,
         )
 
     def _profile_skewed(self, cv_image: np.ndarray) -> np.ndarray:
@@ -109,6 +130,7 @@ class ImagePreprocessingPipeline:
             "original": self._profile_original,
             "basic": self._profile_basic,
             "low_light": self._profile_low_light,
+            "overexposed": self._profile_overexposed,
             "skewed": self._profile_skewed,
             "noisy_scan": self._profile_noisy_scan,
             "small_text": self._profile_small_text,
