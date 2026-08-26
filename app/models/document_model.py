@@ -8,6 +8,8 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.core.database import Base
 if TYPE_CHECKING:
     from app.models.user_model import User
+if TYPE_CHECKING:
+    from app.models.ocr_model import OCREngineResultModel
 
 class StatusEnum(str, enum.Enum):
     PENDING = "PENDING"
@@ -138,9 +140,10 @@ class DocumentPage(Base):
         nullable=True,
     )
 
-    page_ocr_results: Mapped[Optional[dict]] = mapped_column(
-        JSON,
-        nullable=True,
+    ocr_results: Mapped[list["OCREngineResultModel"]] = relationship(
+        "OCREngineResultModel",
+        back_populates="page",
+        cascade="all, delete-orphan",
     )
 
     # Relationship back to the parent document

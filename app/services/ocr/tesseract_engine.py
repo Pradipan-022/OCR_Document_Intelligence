@@ -48,7 +48,7 @@ class TesseractEngine(BaseOCREngine):
                 continue
 
             raw_conf = float(data["conf"][i])
-            normalized_conf = max(0.0, raw_conf)
+            normalized_conf = max(0.0, min(100.0, raw_conf))            
             is_low = raw_conf < settings.LOW_CONFIDENCE_THRESHOLD
 
             x, y, w, h = (
