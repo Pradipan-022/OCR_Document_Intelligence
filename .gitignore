@@ -46,3 +46,4 @@ Thumbs.db
 temp_db_create.py
 app/core/security_temp.py
 app/services/ocr/test_tesseract.py
+app/services/ocr/test_paddle.py

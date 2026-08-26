@@ -1,9 +1,9 @@
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import cv2
-import easyocr
 import numpy as np
+from paddleocr import PaddleOCR
 
 from app.core.config import settings
 from app.schemas.ocr_schema import (
@@ -15,90 +15,133 @@ from app.schemas.ocr_schema import (
 from app.services.ocr.base import BaseOCREngine
 
 
-class EasyOCREngine(BaseOCREngine):
+class PaddleEngine(BaseOCREngine):
     """
-    EasyOCR engine adapter.
+    PaddleOCR 3.x engine adapter using native paddle inference runtime.
     """
 
     def __init__(
         self,
-        languages: Optional[list[str]] = None,
-        gpu: bool = False,
+        lang: str = "en",
+        device: str = "cpu",
     ):
-        self._languages = languages or ["en"]
-        self._gpu = gpu
-        self._reader: Optional[easyocr.Reader] = None
+        self._lang = lang
+        self._device = device
+        self._engine: Optional[PaddleOCR] = None
 
     @property
     def name(self) -> str:
-        return "easyocr"
+        return "paddleocr"
 
     @property
-    def reader(self) -> easyocr.Reader:
-        if self._reader is None:
-            self._reader = easyocr.Reader(
-                self._languages,
-                gpu=self._gpu,
+    def engine(self) -> PaddleOCR:
+        if self._engine is None:
+            self._engine = PaddleOCR(
+                lang=self._lang,
+                device=self._device,
+                use_doc_orientation_classify=False,
+                use_doc_unwarping=False,
+                use_textline_orientation=False,
+                engine="paddle",  # Directs inference to pure Paddle runtime
             )
-        return self._reader
+        return self._engine
 
     def get_version(self) -> str:
         try:
-            return str(easyocr.__version__)
-        except AttributeError:
+            import paddleocr
+
+            return str(getattr(paddleocr, "__version__", "unknown"))
+        except Exception:
             return "unknown"
 
     def _decode_image(self, image_bytes: bytes) -> np.ndarray:
         nparr = np.frombuffer(image_bytes, dtype=np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if image is None:
-            raise ValueError("Failed to decode image bytes for EasyOCR engine.")
+            raise ValueError("Failed to decode image bytes for PaddleOCR engine.")
         return image
+
+    def _extract_result_value(self, result: Any, key: str) -> Any:
+        try:
+            if isinstance(result, dict):
+                return result.get(key)
+            return result[key]
+        except (KeyError, TypeError, IndexError):
+            pass
+        return getattr(result, key, None)
 
     def _parse_results(
         self,
-        raw_results: list,
+        raw_results: Any,
     ) -> tuple[list[OCRWord], list[float], list[str]]:
         words: list[OCRWord] = []
         confidences: list[float] = []
         texts: list[str] = []
 
-        for polygon_points, text, raw_confidence in raw_results:
-            clean_text = text.strip()
-            if not clean_text:
+        if raw_results is None:
+            return words, confidences, texts
+
+        try:
+            results = list(raw_results)
+        except TypeError:
+            results = [raw_results]
+
+        for result in results:
+            rec_texts = self._extract_result_value(result, "rec_texts")
+            rec_scores = self._extract_result_value(result, "rec_scores")
+            rec_polys = self._extract_result_value(result, "rec_polys")
+
+            if rec_texts is None or rec_scores is None:
                 continue
 
-            normalized_confidence = max(
-                0.0, min(100.0, float(raw_confidence) * 100.0)
-            )
-            is_low_confidence = (
-                normalized_confidence < settings.LOW_CONFIDENCE_THRESHOLD
-            )
-            polygon = [
-                [int(point[0]), int(point[1])]
-                for point in polygon_points
-            ]
-            xs = [point[0] for point in polygon]
-            ys = [point[1] for point in polygon]
+            rec_polys = rec_polys if rec_polys is not None else []
 
-            bbox = BoundingBox(
-                x_min=min(xs),
-                y_min=min(ys),
-                x_max=max(xs),
-                y_max=max(ys),
-                polygon=polygon,
-            )
+            for index, text in enumerate(rec_texts):
+                clean_text = str(text).strip()
+                if not clean_text or index >= len(rec_scores):
+                    continue
 
-            word = OCRWord(
-                text=clean_text,
-                confidence=round(normalized_confidence, 2),
-                bbox=bbox,
-                is_low_confidence=is_low_confidence,
-            )
+                raw_confidence = float(rec_scores[index])
+                normalized_confidence = max(
+                    0.0, min(100.0, raw_confidence * 100.0)
+                )
 
-            words.append(word)
-            confidences.append(normalized_confidence)
-            texts.append(clean_text)
+                if index >= len(rec_polys) or rec_polys[index] is None:
+                    continue
+
+                polygon = [
+                    [int(point[0]), int(point[1])]
+                    for point in rec_polys[index]
+                ]
+
+                if len(polygon) < 4:
+                    continue
+
+                xs = [point[0] for point in polygon]
+                ys = [point[1] for point in polygon]
+
+                bbox = BoundingBox(
+                    x_min=min(xs),
+                    y_min=min(ys),
+                    x_max=max(xs),
+                    y_max=max(ys),
+                    polygon=polygon,
+                )
+
+                is_low_confidence = (
+                    normalized_confidence < settings.LOW_CONFIDENCE_THRESHOLD
+                )
+
+                word = OCRWord(
+                    text=clean_text,
+                    confidence=round(normalized_confidence, 2),
+                    bbox=bbox,
+                    is_low_confidence=is_low_confidence,
+                )
+
+                words.append(word)
+                confidences.append(normalized_confidence)
+                texts.append(clean_text)
 
         return words, confidences, texts
 
@@ -111,10 +154,7 @@ class EasyOCREngine(BaseOCREngine):
 
         sorted_words = sorted(
             words,
-            key=lambda word: (
-                word.bbox.y_min,
-                word.bbox.x_min,
-            ),
+            key=lambda word: (word.bbox.y_min, word.bbox.x_min),
         )
 
         lines: list[list[OCRWord]] = []
@@ -124,12 +164,12 @@ class EasyOCREngine(BaseOCREngine):
             word_y = word.bbox.y_min
 
             for line in lines:
-                line_y = np.mean([w.bbox.y_min for w in line])
-
+                line_y = float(np.mean([w.bbox.y_min for w in line]))
                 if abs(word_y - line_y) < 15:
                     line.append(word)
                     placed = True
                     break
+
             if not placed:
                 lines.append([word])
 
@@ -137,11 +177,11 @@ class EasyOCREngine(BaseOCREngine):
 
         for line_words in lines:
             line_words.sort(key=lambda word: word.bbox.x_min)
-
             text = " ".join(word.text for word in line_words)
             confidence = float(
                 np.mean([word.confidence for word in line_words])
             )
+
             bbox = BoundingBox(
                 x_min=min(w.bbox.x_min for w in line_words),
                 y_min=min(w.bbox.y_min for w in line_words),
@@ -157,6 +197,7 @@ class EasyOCREngine(BaseOCREngine):
                     words=line_words,
                 )
             )
+
         return blocks
 
     def extract(
@@ -169,7 +210,11 @@ class EasyOCREngine(BaseOCREngine):
 
         try:
             image = self._decode_image(image_bytes)
-            raw_results = self.reader.readtext(image, detail=1)
+
+            if hasattr(self.engine, "predict"):
+                raw_results = self.engine.predict(image)
+            else:
+                raw_results = self.engine.ocr(image)
 
             words, confidences, texts = self._parse_results(raw_results)
             average_confidence = (
