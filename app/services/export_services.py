@@ -25,23 +25,42 @@ class ExportService:
         return output.getvalue()
 
     @staticmethod
-    def generate_annotated_image(image_bytes: bytes, bounding_boxes: list[dict[str, Any]]) -> bytes:
-        """Draws spatial bounding boxes over key extracted fields on the original document image."""
+    def generate_annotated_image(image_bytes: bytes, blocks: list[dict[str, Any]]) -> bytes:
+        """Draws spatial bounding boxes over extracted text tokens on the document image."""
         nparr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        for box in bounding_boxes:
-            bbox = box.get("bbox")  # Expecting [x, y, w, h] or [x1, y1, x2, y2]
-            if not bbox or len(bbox) < 4:
+        if img is None:
+            raise ValueError("Failed to decode image bytes for annotation.")
+
+        for block in blocks:
+            bbox = block.get("bbox", {})
+            if isinstance(bbox, dict):
+                x1 = bbox.get("x_min", block.get("x_min", 0))
+                y1 = bbox.get("y_min", block.get("y_min", 0))
+                x2 = bbox.get("x_max", block.get("x_max", 0))
+                y2 = bbox.get("y_max", block.get("y_max", 0))
+            elif isinstance(bbox, list) and len(bbox) >= 4:
+                x1, y1, x2, y2 = bbox[0], bbox[1], bbox[2], bbox[3]
+            else:
                 continue
-            x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
-            
+
             # Draw green bounding box rectangle
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             
-            # Tag text label above bounding box
-            label = str(box.get("text", ""))[:15]
-            cv2.putText(img, label, (x, max(y - 5, 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+            # Draw text label above box
+            text_label = str(block.get("text", "")).strip()[:15]
+            if text_label:
+                cv2.putText(
+                    img, 
+                    text_label, 
+                    (int(x1), max(int(y1) - 6, 12)), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 
+                    0.4, 
+                    (255, 0, 0), 
+                    1, 
+                    cv2.LINE_AA
+                )
 
         _, encoded_img = cv2.imencode(".png", img)
         return encoded_img.tobytes()

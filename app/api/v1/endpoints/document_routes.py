@@ -81,3 +81,17 @@ def get_page_image(
         raise HTTPException(status_code=404, detail="Page image not found")
 
     return FileResponse(page.image_path, media_type="image/png")
+
+@router.delete("/{document_id}", status_code=status.HTTP_200_OK)
+def delete_document(document_id: str, db: Session = Depends(get_db)):
+    doc = document_service.get_document_by_id(db=db, document_id=document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 1. Delete physical storage folder
+    storage_service.delete_document_dir(document_id=document_id, user_id=doc.owner_id)
+
+    # 2. Database cascade delete
+    db.delete(doc)
+    db.commit()
+    return {"message": "Document and associated files deleted successfully", "id": document_id}

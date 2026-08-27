@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 from typing import Any, Optional
 from PIL import Image
@@ -93,5 +94,14 @@ class StorageService:
             json.dump(ocr_payload, f, indent=2, ensure_ascii=False)
         return str(ocr_path)
 
+    
+    def delete_document_dir(self, document_id: str, user_id: Optional[str] = None) -> bool:
+        """Removes the entire directory for a document from disk."""
+        user_folder = user_id if user_id else "guest"
+        doc_dir = self.upload_dir / user_folder / document_id
+        if doc_dir.exists() and doc_dir.is_dir():
+            shutil.rmtree(doc_dir)
+            return True
+        return False
 
 storage_service = StorageService()
