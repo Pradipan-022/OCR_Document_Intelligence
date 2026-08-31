@@ -1,114 +1,662 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>OCR Document Intelligence - Platform</title>
+
     <link rel="stylesheet" href="css/style.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
 </head>
+
 <body>
+
     <!-- Top Branding Header -->
     <header class="top-branding">
+
         <div class="brand-logo">
-            <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+            <svg
+                class="brand-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
                 <line x1="16" y1="17" x2="8" y2="17"></line>
                 <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
-            <span class="brand-name">OCR <span class="brand-accent">Document Intelligence</span></span>
+
+            <span class="brand-name">
+                OCR <span class="brand-accent">Document Intelligence</span>
+            </span>
+
         </div>
+
         <span class="version-badge">v1.0</span>
 
-        <!-- App View Header Right Controls (Hidden in Auth View) -->
+        <!-- App View Header Right Controls -->
+        <!-- Hidden while authentication view is active -->
         <div id="header-user-controls" class="header-controls hidden">
+
             <span id="user-badge" class="user-badge"></span>
-            <button id="logout-btn" class="btn-logout" title="Sign Out">Sign Out</button>
+
+            <button
+                id="logout-btn"
+                class="btn-logout"
+                title="Sign Out"
+            >
+                Sign Out
+            </button>
+
         </div>
+
     </header>
+
 
     <!-- Dynamic Animated Background -->
     <div class="bg-glow glow-1"></div>
     <div class="bg-glow glow-2"></div>
     <div class="bg-grid"></div>
 
+
     <!-- MAIN SPA VIEW WRAPPER -->
     <div id="spa-container">
 
-        <!-- VIEW 1: AUTHENTICATION -->
+
+        <!-- ========================================================= -->
+        <!-- VIEW 1: AUTHENTICATION                                    -->
+        <!-- ========================================================= -->
+
         <section id="view-auth" class="spa-view active">
+
             <main class="auth-wrapper">
+
                 <div class="auth-card">
+
                     <div class="auth-header">
+
                         <div class="header-icon-wrap">
                             <span class="auth-icon" id="form-icon">🔐</span>
                         </div>
+
                         <h2 id="form-title">Welcome Back</h2>
-                        <p id="form-subtitle">Sign in to access document ingestion & quality workflows</p>
+
+                        <p id="form-subtitle">
+                            Sign in to access document ingestion &amp; quality workflows
+                        </p>
+
                     </div>
 
-                    <div id="alert-message" class="alert hidden" aria-live="polite"></div>
 
+                    <div
+                        id="alert-message"
+                        class="alert hidden"
+                        aria-live="polite"
+                    ></div>
+
+
+                    <!-- Authentication Form -->
                     <form id="auth-form">
+
                         <div class="form-group">
+
                             <label for="username">Username</label>
+
                             <div class="input-wrapper">
-                                <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+
+                                <input
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    placeholder="Enter your username"
+                                    required
+                                    autocomplete="username"
+                                >
+
                             </div>
+
                         </div>
 
+
                         <div class="form-group">
+
                             <label for="password">Password</label>
+
                             <div class="input-wrapper password-wrapper">
-                                <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
-                                <button type="button" id="toggle-password-btn" class="btn-eye" aria-label="Toggle password visibility">
-                                    <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="••••••••"
+                                    required
+                                    autocomplete="current-password"
+                                >
+
+                                <button
+                                    type="button"
+                                    id="toggle-password-btn"
+                                    class="btn-eye"
+                                    aria-label="Toggle password visibility"
+                                >
+
+                                    <svg
+                                        class="eye-icon"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
+
                                 </button>
+
                             </div>
+
                         </div>
 
-                        <button type="submit" id="submit-btn" class="btn-primary">
+
+                        <button
+                            type="submit"
+                            id="submit-btn"
+                            class="btn-primary"
+                        >
+
                             <span id="btn-text">Sign In</span>
-                            <div class="spinner hidden" id="btn-spinner"></div>
+
+                            <div
+                                class="spinner hidden"
+                                id="btn-spinner"
+                            ></div>
+
                         </button>
+
                     </form>
 
-                    <!-- Guest Mode Option with Tooltip Warning -->
+
+                    <!-- Guest Mode Option -->
                     <div class="guest-divider">
                         <span>OR</span>
                     </div>
 
-                    <div class="guest-action-wrapper" data-tooltip="⚠️ Guest session history will not be saved across visits.">
-                        <button type="button" id="guest-btn" class="btn-secondary">
+
+                    <div
+                        class="guest-action-wrapper"
+                        data-tooltip="⚠️ Guest session history will not be saved across visits."
+                    >
+
+                        <button
+                            type="button"
+                            id="guest-btn"
+                            class="btn-secondary"
+                        >
                             <span>Continue as Guest</span>
+                        </button>
+
+                    </div>
+
+
+                    <!-- Login / Register Toggle -->
+                    <div class="auth-toggle">
+
+                        <span id="toggle-prompt">
+                            Don't have an account?
+                        </span>
+
+                        <button
+                            type="button"
+                            id="toggle-btn"
+                            class="btn-link"
+                        >
+                            Register
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </main>
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- VIEW 2: APPLICATION                                      -->
+        <!-- ========================================================= -->
+
+        <section id="view-app" class="spa-view hidden">
+
+            <div class="dashboard-layout">
+
+
+                
+            <!-- ========================================================= -->
+            <!-- LEFT SIDEBAR NAVIGATION                                   -->
+            <!-- ========================================================= -->
+            <aside class="sidebar-nav">
+
+                <!-- Sidebar Brand -->
+                <div class="sidebar-brand">
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+
+                    <span>OCR Workspace</span>
+                </div>
+
+
+                <!-- Navigation Menu -->
+                <nav class="nav-menu" aria-label="Main navigation">
+
+                    <!-- ===================================================== -->
+                    <!-- DOCUMENT INGESTION                                   -->
+                    <!-- ===================================================== -->
+                    <button
+                        type="button"
+                        class="nav-item active"
+                        id="nav-ingestion"
+                        data-tab="ingestion"
+                        onclick="switchMainTab('ingestion')"
+                    >
+                        <svg
+                            class="nav-icon"
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+
+                        <span>Document Ingestion</span>
+                    </button>
+
+
+                    <!-- ===================================================== -->
+                    <!-- DOCUMENT HISTORY                                     -->
+                    <!-- ===================================================== -->
+                    <div
+                        id="history-nav-wrapper"
+                        class="nav-item-wrapper"
+                        data-tooltip="🔒 History is unavailable in Guest Mode"
+                    >
+                        <button
+                            type="button"
+                            id="nav-history"
+                            class="nav-item"
+                            data-tab="history"
+                            onclick="switchMainTab('history')"
+                        >
+                            <svg
+                                class="nav-icon"
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+
+                            <span>Document History</span>
+
+                            <span
+                                id="history-lock-badge"
+                                class="lock-badge hidden"
+                            >
+                                Locked
+                            </span>
                         </button>
                     </div>
 
-                    <div class="auth-toggle">
-                        <span id="toggle-prompt">Don't have an account?</span>
-                        <button type="button" id="toggle-btn" class="btn-link">Register</button>
-                    </div>
-                </div>
-            </main>
-        </section>
 
-        <!-- VIEW 2: APPLICATION CONTAINER (UPLOAD / WORKSPACE / DASHBOARD) -->
-        <section id="view-app" class="spa-view hidden">
-            <div class="app-container">
-                <!-- Document Upload & Processing Views will render here dynamically -->
-                <div id="app-content-root"></div>
+                    <!-- ===================================================== -->
+                    <!-- PREPROCESSING                                        -->
+                    <!-- ===================================================== -->
+                    <button
+                        type="button"
+                        class="nav-item"
+                        id="nav-preprocessing"
+                        data-tab="preprocessing"
+                        onclick="switchMainTab('preprocessing')"
+                    >
+                        <svg
+                            class="nav-icon"
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <circle cx="12" cy="12" r="3"></circle>
+
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+
+                        <span>Preprocessing</span>
+                    </button>
+
+                </nav>
+
+            </aside>
+            
+
+
+
+                <!-- ================================================= -->
+                <!-- MAIN WORKSPACE                                    -->
+                <!-- ================================================= -->
+
+                <main class="main-workspace">
+
+
+                    <!-- ============================================= -->
+                    <!-- TAB 1: UPLOAD                                 -->
+                    <!-- ============================================= -->
+
+                    <div
+                        id="tab-upload"
+                        class="tab-page active"
+                    >
+
+                        <div class="workspace-header">
+
+                            <h2>Document Ingestion</h2>
+
+                            <p>
+                                Upload single or batch documents for intelligent OCR extraction and preprocessing
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            id="upload-alert"
+                            class="alert hidden"
+                        ></div>
+
+
+                        <div class="upload-workspace-grid">
+
+
+                            <!-- Dropzone -->
+                            <div
+                                class="dropzone-card"
+                                id="dropzoneContainer"
+                            >
+
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    multiple
+                                    accept=".pdf,.png,.jpg,.jpeg"
+                                    class="hidden-file-input"
+                                >
+
+
+                                <div class="dropzone-content">
+
+                                    <div class="dropzone-icon-wrap">
+
+                                        <svg
+                                            class="dropzone-icon"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                        >
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+
+                                    </div>
+
+
+                                    <h3>
+                                        Drag &amp; drop your files here
+                                    </h3>
+
+
+                                    <p class="dropzone-subtitle">
+                                        Supports PDF, PNG, JPG, JPEG
+                                        (Max 10 MB per file, up to 10 files batch)
+                                    </p>
+
+
+                                    <button
+                                        type="button"
+                                        class="btn-browse"
+                                        onclick="document.getElementById('fileInput').click()"
+                                    >
+                                        Browse Files
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Queue -->
+                            <div class="queue-card">
+
+                                <div class="queue-header">
+
+                                    <h3>
+                                        Batch Queue
+                                        (<span id="queueCount">0</span>/10)
+                                    </h3>
+
+                                    <button
+                                        type="button"
+                                        id="btnClearQueue"
+                                        class="btn-clear-queue hidden"
+                                        onclick="clearBatchQueue()"
+                                    >
+                                        Clear All
+                                    </button>
+
+                                </div>
+
+
+                                <div
+                                    id="queueList"
+                                    class="queue-list-container"
+                                >
+
+                                    <div
+                                        class="queue-empty-state"
+                                        id="emptyQueueState"
+                                    >
+
+                                        <span class="empty-icon">📁</span>
+
+                                        <p>
+                                            No documents queued for processing
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="queue-footer">
+
+                                    <button
+                                        type="button"
+                                        id="btnProceedPreprocessing"
+                                        class="btn-primary"
+                                        disabled
+                                        onclick="proceedToPreprocessing()"
+                                    >
+
+                                        <span>
+                                            Proceed to Preprocessing
+                                        </span>
+
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            width="18"
+                                            height="18"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                        >
+                                            <line
+                                                x1="5"
+                                                y1="12"
+                                                x2="19"
+                                                y2="12"
+                                            ></line>
+
+                                            <polyline
+                                                points="12 5 19 12 12 19"
+                                            ></polyline>
+                                        </svg>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ============================================= -->
+                    <!-- TAB 2: HISTORY                                -->
+                    <!-- ============================================= -->
+
+                    <div
+                        id="tab-history"
+                        class="tab-page hidden"
+                    >
+
+                        <div class="workspace-header">
+
+                            <h2>Document History</h2>
+
+                            <p>
+                                View previously processed documents and review historical extraction logs
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            id="history-content-root"
+                            class="history-placeholder"
+                        >
+                            <!-- History items will be dynamically rendered here -->
+                        </div>
+
+                    </div>
+
+
+                    <!-- ============================================= -->
+                    <!-- TAB 3: SETTINGS                               -->
+                    <!-- ============================================= -->
+
+                    <div
+                        id="tab-settings"
+                        class="tab-page hidden"
+                    >
+
+                        <div class="workspace-header">
+
+                            <h2>Pipeline Configuration</h2>
+
+                            <p>
+                                Configure default OCR engines, threshold parameters, and export targets
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ============================================= -->
+                    <!-- TAB 4: PREPROCESSING                          -->
+                    <!-- ============================================= -->
+
+                    <section id="tab-preprocessing" class="tab-page hidden">
+                        <div class="tab-header-row">
+                            <div>
+                                <h2>Document Preprocessing &amp; Quality Control</h2>
+                                <p class="subtitle">
+                                    Review quality metrics and customize image enhancement pipelines before running OCR.
+                                </p>
+                            </div>
+                            <div class="stats-counter-badge">
+                                Total Pages Queued: <span id="prepTotalPages">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Container where page cards are rendered by preprocessing.js -->
+                        <div id="preprocessingPagesContainer"></div>
+                    </section>
+
+
+                    <!-- ============================================= -->
+                    <!-- IMAGE LIGHTBOX                                -->
+                    <!-- ============================================= -->
+
+                    <!-- Fullscreen Image Lightbox Overlay -->
+                    <div id="imageLightboxModal" class="lightbox-modal hidden" onclick="closeImageLightbox(event)">
+                        <div class="lightbox-content" onclick="event.stopPropagation()">
+                            <button type="button" class="lightbox-close" onclick="closeImageLightbox(event, true)">&times;</button>
+                            <img id="lightboxImage" src="" alt="Full Resolution Document Page" />
+                            <div id="lightboxCaption" class="lightbox-caption"></div>
+                        </div>
+                    </div>
+
+                    </div>
+
+                </main>
+
             </div>
+
         </section>
 
     </div>
 
+
+    <!-- JavaScript -->
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/upload.js"></script>
+    <script src="js/preprocessing.js"></script>
+
 </body>
+
 </html>

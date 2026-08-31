@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
     const authForm = document.getElementById('auth-form');
     const alertBox = document.getElementById('alert-message');
     const toggleBtn = document.getElementById('toggle-btn');
@@ -8,9 +9,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnText = document.getElementById('btn-text');
     const formIcon = document.getElementById('form-icon');
     
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('toggle-password-btn');
+    const guestBtn = document.getElementById('guest-btn');
+    
+    const viewAuth = document.getElementById('view-auth');
+    const viewApp = document.getElementById('view-app');
+    const headerControls = document.getElementById('header-user-controls');
+    const userBadge = document.getElementById('user-badge');
+    const logoutBtn = document.getElementById('logout-btn');
+
     let isLogin = true;
 
-    // Toggle between Login and Registration without replacing DOM elements
+    // 1. PERSISTENT AUTH STATE GUARD
+    function checkAuthState() {
+        const storedUser = localStorage.getItem('user');
+        const isGuest = localStorage.getItem('isGuest') === 'true';
+
+        if (storedUser || isGuest) {
+            const username = isGuest ? 'Guest User' : JSON.parse(storedUser).username;
+            showAppView(username, isGuest);
+        } else {
+            showAuthView();
+        }
+    }
+
+    // SPA View Switchers
+    function showAppView(username, isGuest) {
+        viewAuth.classList.remove('active');
+        viewAuth.classList.add('hidden');
+        
+        viewApp.classList.remove('hidden');
+        viewApp.classList.add('active');
+        
+        headerControls.classList.remove('hidden');
+        userBadge.textContent = isGuest ? '👤 Guest Mode' : `👤 ${username}`;
+        
+        // Broadcast custom event so the dynamic upload screen component knows auth is ready
+        window.dispatchEvent(new CustomEvent('app:authenticated', { detail: { username, isGuest } }));
+    }
+
+    function showAuthView() {
+        viewApp.classList.remove('active');
+        viewApp.classList.add('hidden');
+        
+        viewAuth.classList.remove('hidden');
+        viewAuth.classList.add('active');
+        
+        headerControls.classList.add('hidden');
+    }
+
+    // 2. PASSWORD VISIBILITY TOGGLE
+    togglePasswordBtn.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        togglePasswordBtn.style.color = type === 'text' ? 'var(--accent)' : 'var(--text-muted)';
+    });
+
+    // 3. GUEST MODE ACTION
+    guestBtn.addEventListener('click', () => {
+        localStorage.removeItem('user');
+        localStorage.setItem('isGuest', 'true');
+        showAppView('Guest User', true);
+    });
+
+    // 4. LOGOUT ACTION
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('isGuest');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token');
+        authForm.reset();
+        showAlert('', 'hidden');
+        showAuthView();
+    });
+
+    // 5. REGISTER / LOGIN TOGGLE
     toggleBtn.addEventListener('click', () => {
         isLogin = !isLogin;
 
@@ -34,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authForm.reset();
     });
 
-    // Handle standard submission
+    // 6. FORM SUBMISSION (LOGIN / REGISTER)
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         showAlert('', 'hidden');
@@ -60,16 +134,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (isLogin) {
-                showAlert('Login successful! Redirecting...', 'success');
+                showAlert('Login successful! Accessing workspace...', 'success');
+                localStorage.removeItem('isGuest');
                 localStorage.setItem('user', JSON.stringify(data));
+
+                // Save auth token if returned by backend
+                if (data.access_token || data.token) {
+                    localStorage.setItem('access_token', data.access_token || data.token);
+                }
+
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                    showAppView(data.username, false);
+                }, 800);
             } else {
-                showAlert('Account created successfully! Switching to login...', 'success');
+                showAlert('Account created successfully! Switching to sign in...', 'success');
                 setTimeout(() => {
-                    toggleBtn.click(); // Trigger toggle back to login state smoothly
-                }, 1500);
+                    toggleBtn.click();
+                }, 1200);
             }
         } catch (err) {
             showAlert(err.message, 'error');
@@ -86,4 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alertBox.textContent = message;
         alertBox.className = `alert ${type}`;
     }
+
+    // Initialize Auth Check
+    checkAuthState();
 });

@@ -1,8 +1,9 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import Optional
 
 from app.models.document_model import Document, DocumentPage, StatusEnum
 from app.schemas.document_schema import DocumentUploadResponse
+from app.models.user_model import User
 
 
 class DocumentService:
@@ -48,10 +49,28 @@ class DocumentService:
         return db.query(Document).filter(Document.id == document_id).first()
 
     def list_documents(
-        self, db: Session, skip: int = 0, limit: int = 10
+        self,
+        db: Session,
+        user_id: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 50,
     ) -> list[Document]:
-        """Retrieves a paginated list of document records."""
-        return db.query(Document).offset(skip).limit(limit).all()
+        """Retrieves documents with eager-loaded page quality relations, filtered by UUID or username."""
+        query = db.query(Document).options(
+            selectinload(Document.pages).selectinload(DocumentPage.quality)
+        )
+
+        if user_id:
+            query = query.outerjoin(User, Document.owner_id == User.id).filter(
+                (Document.owner_id == user_id) | (User.username == user_id)
+            )
+
+        return (
+            query.order_by(Document.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def get_document_page(
         self, db: Session, document_id: str, page_number: int
