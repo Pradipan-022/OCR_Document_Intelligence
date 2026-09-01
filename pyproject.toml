@@ -8,6 +8,7 @@ dependencies = [
     "bcrypt==4.0.1",
     "easyocr>=1.7.2",
     "fastapi[standard]>=0.141.1",
+    "httpx>=0.28.1",
     "kintera>=1.4.0",
     "opencv-python>=5.0.0.93",
     "paddle>=1.4.0",
@@ -19,6 +20,7 @@ dependencies = [
     "pytesseract>=0.3.13",
     "python-multipart>=0.0.32",
     "sqlalchemy>=2.0.52",
+    "streamlit>=1.62.0",
     "tree>=0.2.4",
     "uvicorn>=0.52.3",
 ]
