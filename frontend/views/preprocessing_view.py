@@ -334,7 +334,7 @@ def render_preprocessing_page():
     with col_ocr:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Proceed to OCR Engine", type="primary", width="stretch"):
-            st.switch_page("views/ocr_engine_view.py")
+            st.switch_page("views/ocr_view.py")
 
     st.markdown("<br>", unsafe_allow_html=True)
 

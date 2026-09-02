@@ -265,7 +265,7 @@ def render_history_page():
     
     with col_action:
         queued_count = len(st.session_state.queued_documents)
-        btn_label = f"Proceed to Preprocessing ({queued_count}) 🚀"
+        btn_label = f"Proceed to Preprocessing ({queued_count})"
         
         if st.button(btn_label, type="primary", disabled=(queued_count == 0), use_container_width=True):
             st.switch_page("views/preprocessing_view.py")
@@ -376,7 +376,7 @@ def render_history_page():
                         
                         c_raw, c_proc = st.columns(2)
                         with c_raw:
-                            st.caption("🖼️ Raw Scan")
+                            st.caption("Raw Scan")
                             raw_bytes = fetch_image_bytes(raw_url)
                             if raw_bytes:
                                 st.image(raw_bytes, width=180)
@@ -384,7 +384,7 @@ def render_history_page():
                                 st.info("Raw preview unavailable")
 
                         with c_proc:
-                            st.caption("✨ Preprocessed")
+                            st.caption("Preprocessed")
                             if proc_url:
                                 proc_bytes = fetch_image_bytes(proc_url)
                                 if proc_bytes:

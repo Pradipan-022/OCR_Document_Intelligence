@@ -32,6 +32,7 @@ else:
         "Pipelines": [
             st.Page("views/ingestion_view.py", title="Document Ingestion", icon="📥"),
             st.Page("views/preprocessing_view.py", title="Preprocessing & Quality", icon="⚙️"),
+            st.Page("views/ocr_view.py", title="OCR Processing", icon="🖨️"),
         ]
     }
     
