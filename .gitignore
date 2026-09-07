@@ -44,6 +44,7 @@ Thumbs.db
 
 #Agents folder
 .agents/skills/
+scratch/
 
 # Temporary test scripts
 temp_db_create.py
