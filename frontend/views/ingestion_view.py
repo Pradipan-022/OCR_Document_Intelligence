@@ -71,7 +71,6 @@ def apply_custom_theme():
             border-right: 1px solid var(--border) !important;
         }
 
-        
         .nav-item:hover {
             background: rgba(255, 255, 255, 0.06);
             border-color: var(--border);
@@ -99,10 +98,11 @@ def apply_custom_theme():
             border-color: var(--border-hover) !important;
         }
 
-        /* Hide ONLY the file list container below the dropzone.
-           Leaves section[data-testid="stFileUploaderDropzone"] and the Browse button visible. */
+        /* Hide file list container and default 200MB limit label inside dropzone */
         div[data-testid="stFileUploader"] [data-testid="stFileUploaderFileLayout"],
         div[data-testid="stFileUploader"] [data-testid*="FileLayout"],
+        div[data-testid="stFileUploader"] small,
+        div[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] small,
         div[data-testid="stFileUploader"] ul {
             display: none !important;
         }
@@ -178,9 +178,6 @@ def apply_custom_theme():
     """, unsafe_allow_html=True)
 
 
-
-
-
 def render_type_badge(file_type: str) -> str:
     """Returns a colorized HTML tag for a file extension/type."""
     key = (file_type or "").lower().lstrip(".")
@@ -214,16 +211,12 @@ def delete_from_backend(document_id):
 def render_ingestion_page():
     apply_custom_theme()
     
-    
     if "queued_documents" not in st.session_state:
         st.session_state.queued_documents = []
-    # Tracks (filename, size) pairs already handed to the backend, so a file the user
-    # removed from the Batch Queue doesn't silently get re-added — the file_uploader
-    # widget keeps returning every file it's holding on every rerun, not just new ones.
+    # Tracks (filename, size) pairs already handed to the backend
     if "seen_upload_keys" not in st.session_state:
         st.session_state.seen_upload_keys = set()
-    # Bumped on "Clear All" to remount the uploader with a fresh key, fully detaching
-    # it from any previously selected files instead of just hiding them.
+    # Bumped on "Clear All" to remount the uploader with a fresh key
     if "uploader_key" not in st.session_state:
         st.session_state.uploader_key = 0
 
@@ -253,7 +246,6 @@ def render_ingestion_page():
                 current_count = len(st.session_state.queued_documents)
                 if current_count + len(new_files) > MAX_BATCH_SIZE:
                     st.error(f"Cannot exceed maximum batch limit of {MAX_BATCH_SIZE} files.")
-                    # Prevent widget from constantly re-triggering this error
                     st.session_state.seen_upload_keys.update([(f.name, f.size) for f in new_files])
                 else:
                     success = False
@@ -273,30 +265,9 @@ def render_ingestion_page():
                                 st.session_state.queued_documents.append(doc_data)
                                 success = True
                     
-                    # If at least one file succeeded, unmount the uploader to clear its internal cache
                     if success:
                         st.session_state.uploader_key += 1
                         st.rerun()
-            current_count = len(st.session_state.queued_documents)
-            if current_count + len(new_files) > MAX_BATCH_SIZE:
-                st.error(f"Cannot exceed maximum batch limit of {MAX_BATCH_SIZE} files.")
-            else:
-                for file in new_files:
-                    size_mb = file.size / (1024 * 1024)
-                    if size_mb > MAX_FILE_SIZE_MB:
-                        st.error(f"'{file.name}' exceeds {MAX_FILE_SIZE_MB}MB limit.")
-                        st.session_state.seen_upload_keys.add((file.name, file.size))
-                        continue
-
-                    with st.spinner(f"Uploading {file.name}..."):
-                        doc_data = upload_to_backend(file)
-                        st.session_state.seen_upload_keys.add((file.name, file.size))
-                        if doc_data:
-                            # Append custom frontend tracking fields to backend response schema
-                            doc_data["size"] = file.size
-                            doc_data["size_mb"] = size_mb
-                            st.session_state.queued_documents.append(doc_data)
-                            queue = st.session_state.queued_documents
 
         st.caption(f"Max {MAX_BATCH_SIZE} files per batch • {MAX_FILE_SIZE_MB}MB per file")
 
@@ -311,7 +282,7 @@ def render_ingestion_page():
                     delete_from_backend(doc['document_id'])
                 st.session_state.queued_documents = []
                 st.session_state.seen_upload_keys = set()
-                st.session_state.uploader_key += 1  # remounts file_uploader, fully detached
+                st.session_state.uploader_key += 1
                 st.rerun()
 
         if not queue:
@@ -346,7 +317,6 @@ def render_ingestion_page():
                     if st.button("✖", key=f"del_{doc['document_id']}", type="secondary", use_container_width=True):
                         delete_from_backend(doc['document_id'])
                         
-                        # Remove from tracking set so the user can re-upload this exact file
                         file_key = (doc['filename'], doc.get('size', 0))
                         if file_key in st.session_state.seen_upload_keys:
                             st.session_state.seen_upload_keys.remove(file_key)
