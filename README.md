@@ -1,3 +1,8 @@
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)]()
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)]()
+
 # 📄 OCR Document Intelligence Platform
 
 A decoupled web application for intelligent document processing, quality profiling, and structured data extraction. The platform features an automated quality assessment module, an adaptive OpenCV image enhancement pipeline, and multi-engine OCR orchestration across **PaddleOCR**, **Tesseract**, and **EasyOCR**.
@@ -24,8 +29,6 @@ A decoupled web application for intelligent document processing, quality profili
 ---
 
 ## Screenshots & Demo
-
-> 📸 Replace the placeholders below with real assets. Suggested paths are under `docs/media/` — update the image/gif links once your files are added.
 
 ### Login Page
 
@@ -280,4 +283,4 @@ Contributions are welcome! Please open an issue to discuss proposed changes, or 
 
 ## License
 
-*Specify your project's license here (e.g., MIT, Apache 2.0).*
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
