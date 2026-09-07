@@ -43,7 +43,7 @@ htmlcov/
 Thumbs.db
 
 #Agents folder
-.agents/
+.agents/skillss
 
 # Temporary test scripts
 temp_db_create.py
