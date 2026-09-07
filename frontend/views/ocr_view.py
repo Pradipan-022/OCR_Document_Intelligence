@@ -63,6 +63,15 @@ def apply_custom_theme():
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
             background-size: auto, auto, auto, 40px 40px, 40px 40px !important;
         }
+        
+        /* Glassmorphic Sidebar — matches the same blur/saturate/gradient language as the rest of the app */
+                section[data-testid="stSidebar"] {
+                    background: rgba(9, 12, 20, 0.78) !important;
+                    background-image: radial-gradient(circle at 30% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 55%) !important;
+                    backdrop-filter: blur(22px) saturate(150%) !important;
+                    -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+                    border-right: 1px solid var(--border) !important;
+                }
 
         .badge {
             padding: 4px 12px;
@@ -181,18 +190,17 @@ def trigger_ocr_processing(document_id: str) -> dict:
     return {}
 
 
-def fetch_document_status(document_id: str) -> str:
-    """Fetches real-time status of a document from backend."""
+def fetch_document_status(document_id: str) -> dict:
+    """Fetches real-time status and progress details of a document from backend."""
     try:
         res = requests.get(f"{OCR_API_URL}/{document_id}/status")
         if res.status_code == 200:
-            return res.json().get("status", "UNKNOWN")
+            return res.json()
     except requests.exceptions.RequestException:
         pass
-    return "UNKNOWN"
+    return {"status": "UNKNOWN", "progress": 0, "current_step": ""}
 
 
-@st.cache_data(ttl=30, show_spinner=False)
 def fetch_structured_text(document_id: str, page_number: int = 1, engine: str = None, granularity: str = "word") -> dict:
     """Fetches structured OCR tokens and spatially reconstructed lines with bbox coordinates."""
     try:
@@ -207,7 +215,6 @@ def fetch_structured_text(document_id: str, page_number: int = 1, engine: str = 
     return {}
 
 
-@st.cache_data(ttl=60, show_spinner=False)
 def fetch_ocr_results(document_id: str) -> dict:
     """Fetches OCR extraction results, anomalies, and engine performance metrics."""
     try:
@@ -428,6 +435,12 @@ def render_svg_canvas(data_uri, width, height, boxes, accent_color, min_confiden
     </div>
     """
     st.html(html)
+
+
+@st.dialog("Enlarged Page Scan", width="large")
+def show_enlarged_image(data_uri, width, height, boxes, accent_color, min_confidence=0.0):
+    """Displays full-resolution scan image with SVG bounding boxes inside a modal dialog."""
+    render_svg_canvas(data_uri, width, height, boxes, accent_color, min_confidence)
 
 
 def render_structured_text_tab(struct_data: dict, page_data: dict, selected_engine: str, min_confidence: float = 0.0):
@@ -712,26 +725,61 @@ def render_review_page():
         st.session_state.review_page_num = 1
         st.session_state.review_last_doc_id = doc_id
 
+    # 1. Direct fetch from result endpoint
     results = fetch_ocr_results(doc_id)
-    if not results:
-        status_val = fetch_document_status(doc_id)
-        if status_val != "PROCESSING":
+
+    # 2. If results not ready or missing pages, trigger /process endpoint and display loading screen
+    if not results or not results.get("pages"):
+        status_info = fetch_document_status(doc_id)
+        status_val = status_info.get("status", "UNKNOWN")
+
+        # Explicitly invoke POST /api/v1/ocr/{document_id}/process if document is not currently processing or completed
+        if status_val not in ("PROCESSING", "COMPLETED"):
             proc_resp = trigger_ocr_processing(doc_id)
             if proc_resp:
-                st.toast("Triggered document OCR pipeline processing!", icon="🚀")
+                st.toast("Started page-by-page OCR engine pipeline!", icon="🚀")
+            status_info = fetch_document_status(doc_id)
+            status_val = status_info.get("status", "PROCESSING")
 
+        st.markdown("<br>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.info("Document OCR processing is currently executing in background...", icon=":material/hourglass_top:")
-            st.caption("Running Tesseract, EasyOCR, and PaddleOCR engines with Consensus Engine score evaluation.")
-            if st.button("Refresh OCR results", type="primary", icon=":material/refresh:"):
-                st.cache_data.clear()
-                st.rerun()
+            st.markdown("### ⏳ Processing Document Pages...")
+            st.caption("Each document page is being processed sequentially across Tesseract, EasyOCR, and PaddleOCR engines.")
+
+            progress_pct = status_info.get("progress", 10)
+            curr_page = status_info.get("current_page", 1)
+            tot_pages = status_info.get("total_pages", 1)
+            step_msg = status_info.get("current_step") or f"Processing Page {curr_page} of {tot_pages}..."
+
+            st.progress(max(0, min(100, int(progress_pct))) / 100.0)
+            
+            c_info, c_btn = st.columns([3.5, 1])
+            with c_info:
+                if status_val == "FAILED":
+                    st.error("Document OCR processing failed.", icon=":material/error:")
+                else:
+                    st.info(f"**Status:** `{status_val}` — {step_msg}", icon=":material/hourglass_top:")
+            with c_btn:
+                if status_val == "FAILED":
+                    if st.button("▶ Retry Processing", type="primary", key="retry_proc_btn"):
+                        trigger_ocr_processing(doc_id)
+                        st.rerun()
+                else:
+                    if st.button("🔄 Reload Page", type="primary", key="loading_reload_btn"):
+                        st.cache_data.clear()
+                        st.rerun()
+
+        import time
+        time.sleep(2)
+        st.rerun()
         return
 
-    total_pages = results.get("total_pages", 1)
+    # 3. Results loaded successfully from result endpoint
+    total_pages = results.get("total_pages") or len(results.get("pages", [])) or 1
+    st.session_state.review_page_num = max(1, min(st.session_state.review_page_num, total_pages))
 
     # --- Top Export & Status Bar ---
-    top_c1, top_c2, top_c3 = st.columns([2, 3, 3])
+    top_c1, top_c2, top_c3 = st.columns([2, 2.5, 3.5])
     with top_c1:
         status = str(results.get("status", "COMPLETED")).upper()
         badge_class = "badge-good" if status == "COMPLETED" else "badge-critical" if status in ("FAILED", "ERROR") else "badge-warning"
@@ -747,8 +795,13 @@ def render_review_page():
             st.markdown("<span class='badge badge-good'>Validation Passed</span>", unsafe_allow_html=True)
 
     with top_c3:
-        # Fully functioning Download Buttons
-        e1, e2, e3 = st.columns(3)
+        # Action Buttons
+        e0, e1, e2, e3 = st.columns([1.1, 1, 1, 1.4])
+        
+        with e0:
+            if st.button("🔄 Reload", key="workbench_reload_btn", help="Reload page data"):
+                st.cache_data.clear()
+                st.rerun()
         
         json_bytes, json_mime, json_name = fetch_export_file(doc_id, "json", st.session_state.review_page_num)
         csv_bytes, csv_mime, csv_name = fetch_export_file(doc_id, "csv", st.session_state.review_page_num)
@@ -850,6 +903,9 @@ def render_review_page():
 
         data_uri, width, height = fetch_page_image(doc_id, st.session_state.review_page_num)
         render_svg_canvas(data_uri, width, height, engine_boxes, accent_color, min_confidence=min_confidence_cutoff)
+
+        if st.button(" Click to Enlarge Image", key="btn_enlarge_image", use_container_width=True, icon=":material/zoom_in:"):
+            show_enlarged_image(data_uri, width, height, engine_boxes, accent_color, min_confidence=min_confidence_cutoff)
 
         if engine_key == "all":
             st.markdown("""

@@ -35,14 +35,34 @@ def get_document_status(document_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    return {"document_id": document_id, "status": doc.status}
+    
+    status_str = doc.status.value if hasattr(doc.status, "value") else str(doc.status)
+    res = {
+        "document_id": document_id,
+        "status": status_str,
+        "total_pages": doc.page_count or len(doc.pages) or 1
+    }
+    if doc.ocr_results and isinstance(doc.ocr_results, dict):
+        res["progress"] = doc.ocr_results.get("progress", 0)
+        res["current_step"] = doc.ocr_results.get("current_step", "")
+        res["current_page"] = doc.ocr_results.get("current_page", 1)
+        if "total_pages" in doc.ocr_results:
+            res["total_pages"] = doc.ocr_results["total_pages"]
+    return res
 
 @router.get("/{document_id}/result")
 def get_document_result(document_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == document_id).first()
-    if not doc or doc.status != StatusEnum.COMPLETED:
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.status != StatusEnum.COMPLETED:
         raise HTTPException(status_code=400, detail="Results not ready or processing failed")
-    return doc.ocr_results
+    
+    res = dict(doc.ocr_results or {})
+    res["document_id"] = doc.id
+    res["status"] = doc.status.value if hasattr(doc.status, "value") else str(doc.status)
+    res["total_pages"] = doc.page_count or len(doc.pages) or len(res.get("pages", [])) or 1
+    return res
 
 @router.put("/{document_id}/review")
 def save_human_review(document_id: str, payload: dict, db: Session = Depends(get_db)):

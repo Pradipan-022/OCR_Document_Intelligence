@@ -54,6 +54,15 @@ def apply_custom_theme():
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
             background-size: auto, auto, auto, 40px 40px, 40px 40px !important;
         }
+        
+        /* Glassmorphic Sidebar — matches the same blur/saturate/gradient language as the rest of the app */
+                section[data-testid="stSidebar"] {
+                    background: rgba(9, 12, 20, 0.78) !important;
+                    background-image: radial-gradient(circle at 30% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 55%) !important;
+                    backdrop-filter: blur(22px) saturate(150%) !important;
+                    -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+                    border-right: 1px solid var(--border) !important;
+                }
 
         /* Standard Glassmorphic Document Card Container */
         div[data-testid="stVerticalBlockBorderWrapper"] {

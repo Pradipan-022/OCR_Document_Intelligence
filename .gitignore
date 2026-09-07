@@ -42,6 +42,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+#Agents folder
+.agents/
+
 # Temporary test scripts
 temp_db_create.py
 app/core/security_temp.py
